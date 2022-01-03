@@ -829,7 +829,7 @@ def transformer_model(input_tensor,
 
   all_layer_outputs = []
 
-  # 레이어의 개수만큼 반복하여 인코더 레이어를 쌓음 / num_hidden_layers : BERT 레이어 개수
+  # 레이어의 개수만큼 반복하여 인코더 레이어를 쌓음 / num_hidden_layers: BERT 레이어 개수
   for layer_idx in range(num_hidden_layers):
     with tf.variable_scope("layer_%d" % layer_idx):
       layer_input = prev_output
