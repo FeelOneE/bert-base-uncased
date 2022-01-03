@@ -1,12 +1,12 @@
 # coding=utf-8
 # Copyright 2018 The Google AI Language Team Authors.
-#
+
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
+
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,26 +46,17 @@ class BertConfig(object):
     """Constructs BertConfig.
 
     Args:
-      vocab_size: Vocabulary size of `inputs_ids` in `BertModel`.
-      hidden_size: Size of the encoder layers and the pooler layer.
-      num_hidden_layers: Number of hidden layers in the Transformer encoder.
-      num_attention_heads: Number of attention heads for each attention layer in
-        the Transformer encoder.
-      intermediate_size: The size of the "intermediate" (i.e., feed-forward)
-        layer in the Transformer encoder.
-      hidden_act: The non-linear activation function (function or string) in the
-        encoder and pooler.
-      hidden_dropout_prob: The dropout probability for all fully connected
-        layers in the embeddings, encoder, and pooler.
-      attention_probs_dropout_prob: The dropout ratio for the attention
-        probabilities.
-      max_position_embeddings: The maximum sequence length that this model might
-        ever be used with. Typically set this to something large just in case
-        (e.g., 512 or 1024 or 2048).
-      type_vocab_size: The vocabulary size of the `token_type_ids` passed into
-        `BertModel`.
-      initializer_range: The stdev of the truncated_normal_initializer for
-        initializing all weight matrices.
+      vocab_size: BertModel'에서 'inputs_ids'의 어휘 크기입니다.
+      hidden_size: 인코더 계층 및 풀러 계층의 크기입니다.
+      num_hidden_layers: 트랜스포머 인코더의 숨겨진 레이어 수입니다.
+      num_attention_heads: 트랜스포머 인코더의 각 주의 계층에 대한 주의 헤드 수입니다.
+      intermediate_size: 트랜스포머 인코더의 중간"(즉, 피드 포워드) 레이어의 크기입니다.
+      hidden_act: 인코더 및 풀러의 비선형 활성화 기능(기능 또는 문자열)입니다.
+      hidden_dropout_prob: 임베딩, 인코더 및 풀러에서 완전히 연결된 모든 계층에 대한 드롭아웃 확률입니다.
+      attention_probs_dropout_prob: 어텐션 확률에 대한 드롭아웃 비율입니다.
+      max_position_embeddings: 이 모델에 사용될 수 있는 최대 시퀀스 길이입니다. 일반적으로 512, 1024 또는 2048과 같은 경우에 대비하여 이 값을 큰 값으로 설정합니다.
+      type_vocab_size: `BertModel`을 통과하는 'token_type_ids'의 어휘 크기입니다.
+      initializer_range: 모든 가중치 행렬을 초기화하기 위한 truncated_normal_initializer의 stdev입니다.
     """
     self.vocab_size = vocab_size
     self.hidden_size = hidden_size
@@ -79,6 +70,7 @@ class BertConfig(object):
     self.type_vocab_size = type_vocab_size
     self.initializer_range = initializer_range
 
+# classmethod 는 객체(class)를 반환함
   @classmethod
   def from_dict(cls, json_object):
     """Constructs a `BertConfig` from a Python dictionary of parameters."""
@@ -96,6 +88,8 @@ class BertConfig(object):
 
   def to_dict(self):
     """Serializes this instance to a Python dictionary."""
+    # self.__dict__ : 자신의 속성 정보를 dict 형태로 반환함 
+    # 얕은 복사를 하게되면 내부 데이터가 같은 주소를 보게 되지만 깊은 복사(deep copy)를 하면 변하지 않음
     output = copy.deepcopy(self.__dict__)
     return output
 
@@ -438,8 +432,7 @@ def embedding_postprocessor(input_tensor,
   """Performs various post-processing on a word embedding tensor.
 
   Args:
-    input_tensor: float Tensor of shape [batch_size, seq_length,
-      embedding_size].
+    input_tensor: float Tensor of shape [batch_size, seq_length, embedding_size].
     use_token_type: bool. Whether to add embeddings for `token_type_ids`.
     token_type_ids: (optional) int32 Tensor of shape [batch_size, seq_length].
       Must be specified if `use_token_type` is True.
@@ -625,7 +618,8 @@ def attention_layer(from_tensor,
   Raises:
     ValueError: Any of the arguments or tensor shapes are invalid.
   """
-
+  
+  # 4. num_heads 개수만큼 q, k, v를 split하는 함수
   def transpose_for_scores(input_tensor, batch_size, num_attention_heads,
                            seq_length, width):
     output_tensor = tf.reshape(
@@ -633,6 +627,7 @@ def attention_layer(from_tensor,
 
     output_tensor = tf.transpose(output_tensor, [0, 2, 1, 3])
     return output_tensor
+ ####
 
   from_shape = get_shape_list(from_tensor, expected_rank=[2, 3])
   to_shape = get_shape_list(to_tensor, expected_rank=[2, 3])
@@ -661,6 +656,8 @@ def attention_layer(from_tensor,
 
   from_tensor_2d = reshape_to_matrix(from_tensor)
   to_tensor_2d = reshape_to_matrix(to_tensor)
+
+  # 5. 쿼리, 키 벨류 레이어를 선언하는 곳
 
   # `query_layer` = [B*F, N*H]
   query_layer = tf.layers.dense(
@@ -698,6 +695,10 @@ def attention_layer(from_tensor,
   # Take the dot product between "query" and "key" to get the raw
   # attention scores.
   # `attention_scores` = [B, N, F, T]
+
+
+
+  ## 6. 스케일 닷 프로덕트 부분
   attention_scores = tf.matmul(query_layer, key_layer, transpose_b=True)
   attention_scores = tf.multiply(attention_scores,
                                  1.0 / math.sqrt(float(size_per_head)))
@@ -747,7 +748,8 @@ def attention_layer(from_tensor,
     context_layer = tf.reshape(
         context_layer,
         [batch_size, from_seq_length, num_attention_heads * size_per_head])
-
+  
+  # 7. 어텐션 가중치 * Key 결과 리턴 (스케일 닷 프로덕트 리턴 결과와 같음)
   return context_layer
 
 
@@ -799,11 +801,14 @@ def transformer_model(input_tensor,
   Raises:
     ValueError: A Tensor shape or parameter is invalid.
   """
+
+  # 1. input 길이는 멀티헤드의 개수로 나누었을 때 나누어 떨어져야함
   if hidden_size % num_attention_heads != 0:
     raise ValueError(
         "The hidden size (%d) is not a multiple of the number of attention "
         "heads (%d)" % (hidden_size, num_attention_heads))
 
+  # 2. 어텐션 헤드 개수
   attention_head_size = int(hidden_size / num_attention_heads)
   input_shape = get_shape_list(input_tensor, expected_rank=3)
   batch_size = input_shape[0]
@@ -830,6 +835,7 @@ def transformer_model(input_tensor,
       with tf.variable_scope("attention"):
         attention_heads = []
         with tf.variable_scope("self"):
+          # 3. 어텐션 스코어 구하기 
           attention_head = attention_layer(
               from_tensor=layer_input,
               to_tensor=layer_input,
@@ -854,6 +860,8 @@ def transformer_model(input_tensor,
 
         # Run a linear projection of `hidden_size` then add a residual
         # with `layer_input`.
+
+        # 8. W0 밀집층 지나기 / 잔차 더하기 및 정규화
         with tf.variable_scope("output"):
           attention_output = tf.layers.dense(
               attention_output,
@@ -862,6 +870,8 @@ def transformer_model(input_tensor,
           attention_output = dropout(attention_output, hidden_dropout_prob)
           attention_output = layer_norm(attention_output + layer_input)
 
+
+      # 피드 포워드 레이어 지나기
       # The activation is only applied to the "intermediate" hidden layer.
       with tf.variable_scope("intermediate"):
         intermediate_output = tf.layers.dense(
@@ -870,6 +880,7 @@ def transformer_model(input_tensor,
             activation=intermediate_act_fn,
             kernel_initializer=create_initializer(initializer_range))
 
+      # 잔차 더하기 및 입력 크기와 똑같이 출력함
       # Down-project back to `hidden_size` then add the residual.
       with tf.variable_scope("output"):
         layer_output = tf.layers.dense(
@@ -889,6 +900,8 @@ def transformer_model(input_tensor,
     return final_outputs
   else:
     final_output = reshape_from_matrix(prev_output, input_shape)
+
+    # 하나의 BERT 레이어의 출력값 리턴
     return final_output
 
 
