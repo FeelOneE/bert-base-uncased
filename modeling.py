@@ -828,6 +828,8 @@ def transformer_model(input_tensor,
   prev_output = reshape_to_matrix(input_tensor)
 
   all_layer_outputs = []
+
+  # 레이어의 개수만큼 반복하여 인코더 레이어를 쌓음 / num_hidden_layers : BERT 레이어 개수
   for layer_idx in range(num_hidden_layers):
     with tf.variable_scope("layer_%d" % layer_idx):
       layer_input = prev_output
@@ -901,7 +903,7 @@ def transformer_model(input_tensor,
   else:
     final_output = reshape_from_matrix(prev_output, input_shape)
 
-    # 하나의 BERT 레이어의 출력값 리턴
+    # BERT 레이어 출력값 리턴
     return final_output
 
 
